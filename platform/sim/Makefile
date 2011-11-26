@@ -1,6 +1,12 @@
 CC=g++
-CFLAGS=-Wall -Werror
-LDFLAGS=-pthread
+CPPFLAGS=-Wall -Werror -Iinclude/ -std=c++0x
+LDFLAGS=-rdynamic
+LDLIBS=-pthread -ldl
 
-hive: main.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o hive main.o
+OBJS=main.o module.o 
+
+hive: $(OBJS)
+	$(CC) $(CPPFLAGS) $(LDFLAGS) -o hive $(OBJS) $(LDLIBS)
+
+clean:
+	rm -f $(OBJS)

@@ -8,6 +8,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <module.hpp>
+
 void *scheduler_init(void *arg);
 
 int main(int argc, char **argv)
@@ -59,6 +61,9 @@ void *scheduler_init(void *arg)
 	}
 
 	sleep(1);
+
+	ModuleFactory::getInstance()->loadModule("test");
+	ModuleFactory::getInstance()->unloadModule("test");
 
 	pthread_exit(NULL);
 }
