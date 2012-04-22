@@ -1,0 +1,2 @@
+#define HIVE_VERSION_MAJOR @hive_version_majos@
+#define HIVE_VERSION_MINOR @hive_version_minor@
