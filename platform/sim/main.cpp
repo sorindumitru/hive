@@ -8,13 +8,29 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <scheduler.h>
+#include <scheduler.hpp>
 #include <module.hpp>
 
 void *scheduler_init(void *arg);
 
+static void sim_schedule_timer(struct scheduler *sched,
+		int timeout,
+		callback_t *cb,
+		void *arg);
+
+Scheduler **schedulers;
+
 int main(int argc, char **argv)
 {
+	struct scheduler sim_sched = {
+		.schedule_timer = sim_schedule_timer,
+	};
 	int nrcpus = sysconf(_SC_NPROCESSORS_ONLN);
+
+	register_scheduler(&sim_sched);
+
+	schedulers = new Scheduler*[nrcpus];
 
 	pthread_t *schedulers = (pthread_t *) calloc(nrcpus, sizeof(schedulers));
 	if (!schedulers)
@@ -43,12 +59,22 @@ int main(int argc, char **argv)
 	return 0;
 }
 
+static void sim_schedule_timer(struct scheduler *sched,
+		int timeout,
+		callback_t *cb,
+		void *arg)
+{
+	int cpu = sched_getcpu();
+	event_arg *earg = new event_arg;
+	earg->cb = cb;
+	earg->args = arg;
+	schedulers[cpu]->schedule(timeout, earg);
+}
+
 void *scheduler_init(void *arg)
 {
 	int err, cpu = (int) arg;
 	cpu_set_t cpu_set;
-
-	std::cout << "Started scheduler " << (cpu + 1) << std::endl;
 
 	CPU_ZERO(&cpu_set);
 	CPU_SET(cpu, &cpu_set);
@@ -62,8 +88,13 @@ void *scheduler_init(void *arg)
 
 	sleep(1);
 
-	ModuleFactory::getInstance()->loadModule("test");
-	ModuleFactory::getInstance()->unloadModule("test");
+	Scheduler *sched = new Scheduler();
+	schedulers[cpu] = sched;
 
+	std::cout << "Started scheduler " << (cpu + 1) << std::endl;
+	if (cpu == 0)
+	sched->run();
+
+	delete sched;
 	pthread_exit(NULL);
 }

@@ -1,4 +1,6 @@
 *.o
 *.so
+*.swp
+*.swo
 hive
 build/
