@@ -32,14 +32,16 @@ int main(int argc, char **argv)
 	register_scheduler(&sim_sched);
 
 	schedulers = new Scheduler*[nrcpus];
-
-	pthread_t *schedulers = (pthread_t *) calloc(nrcpus, sizeof(schedulers));
 	if (!schedulers)
+		exit(-ENOMEM);
+
+	pthread_t *pschedulers = (pthread_t *) calloc(nrcpus, sizeof(pschedulers));
+	if (!pschedulers)
 		exit(-ENOMEM);
 
 	/* start schedulers */
 	for (int cpu = 0; cpu < nrcpus; cpu++) {
-		int err = pthread_create(&schedulers[cpu],
+		int err = pthread_create(&pschedulers[cpu],
 		                         NULL,
 		                         scheduler_init,
 		                         (void *) cpu);
@@ -51,11 +53,14 @@ int main(int argc, char **argv)
 
 	/* wait for schedulers to finish */
 	for (int cpu = 0; cpu < nrcpus; cpu++) {
-		if (pthread_join(schedulers[cpu], NULL) != 0) {
+		if (pthread_join(pschedulers[cpu], NULL) != 0) {
 			perror("pthread_join");
 			exit(-1);
 		}
 	}
+
+	delete[] schedulers;
+	free(pschedulers);
 
 	return 0;
 }
