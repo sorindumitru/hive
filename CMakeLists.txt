@@ -12,5 +12,5 @@ configure_file (
 include_directories("${PROJECT_BINARY_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
-add_library(hive core/scheduler.c net/packet.c)
+add_library(hive core/scheduler.c net/packet.c net/basic/proto.c)
 add_subdirectory(platform)

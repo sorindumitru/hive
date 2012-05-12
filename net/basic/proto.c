@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <errno.h>
 
 #include <net/basic.h>
 #include <net/packet.h>
@@ -6,12 +7,12 @@
 struct packet *basic_alloc_packet(unsigned int len)
 {
 	struct packet *packet = alloc_packet(len + sizeof(struct basic_header));
-	struct basic_header *header = packet->data;
+	struct basic_header *header = (struct basic_header *) packet->data;
 
 	if (!packet)
 		return NULL;
 
-	packet->head = header + 1;
+	packet->head = (char *)(header + 1);
 
 	return packet;
 }
@@ -29,7 +30,7 @@ struct basic_socket *basic_socket_alloc(void)
 	return socket;
 }
 
-vodi basic_socket_bind(struct basic_socket *sk, int from, int to)
+int basic_socket_bind(struct basic_socket *sk, int from, int to)
 {
 	sk->from = from;
 	sk->to = to;
@@ -38,7 +39,7 @@ vodi basic_socket_bind(struct basic_socket *sk, int from, int to)
 int basic_send(struct basic_socket *sk, char *buf, unsigned int len)
 {
 	struct packet *packet = basic_alloc_packet(len);
-	struct basic_header *header = packet->mac;
+	struct basic_header *header = (struct basic_header *) packet->mac;
 
 	if (!packet)
 		return -ENOMEM;

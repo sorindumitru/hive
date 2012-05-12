@@ -13,7 +13,7 @@ struct basic_socket {
 
 struct packet *basic_alloc_packet(unsigned int len);
 struct basic_socket *basic_socket_alloc(void);
-int basic_socket_bind(int from, int to);
+int basic_socket_bind(struct basic_socket *sk, int from, int to);
 int basic_send(struct basic_socket *sk, char *buff, unsigned int len);
 
 #endif /* end of include guard: BASIC_L7M8L24G */
