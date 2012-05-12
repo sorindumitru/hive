@@ -24,7 +24,8 @@ Scheduler **schedulers;
 int main(int argc, char **argv)
 {
 	struct scheduler sim_sched = {
-		.schedule_timer = sim_schedule_timer,
+		sim_schedule_timer,
+		NULL,
 	};
 	int nrcpus = sysconf(_SC_NPROCESSORS_ONLN);
 
