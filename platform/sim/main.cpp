@@ -44,7 +44,7 @@ int main(int argc, char **argv)
 		int err = pthread_create(&pschedulers[cpu],
 		                         NULL,
 		                         scheduler_init,
-		                         (void *) cpu);
+		                         reinterpret_cast<void *>(cpu));
 		if (err != 0) {
 			perror("pthread_create");
 			exit(-1);
@@ -79,7 +79,8 @@ static void sim_schedule_timer(struct scheduler *sched,
 
 void *scheduler_init(void *arg)
 {
-	int err, cpu = (int) arg;
+	int err;
+	size_t cpu = reinterpret_cast<size_t>(arg);
 	cpu_set_t cpu_set;
 
 	CPU_ZERO(&cpu_set);
@@ -99,6 +100,7 @@ void *scheduler_init(void *arg)
 
 	std::cout << "Started scheduler " << (cpu + 1) << std::endl;
 	if (cpu == 0)
+		/* TODO: start command thread */
 	sched->run();
 
 	delete sched;
