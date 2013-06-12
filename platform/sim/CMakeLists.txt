@@ -1,4 +1,4 @@
-set(CMAKE_CXX_FLAGS "-Wall  -std=c++11 -stdlib=libc++ -pthread")
+set(CMAKE_CXX_FLAGS "-g -Wall  -std=c++11 -pthread")
 
 
 add_library(platform SHARED platform.c)
