@@ -36,12 +36,15 @@ void worker::addTimer(callback_t *callback, int timeout)
 
 void worker::start()
 {
+	extern event_base *m_plat_base[16];
 	std::cout << "Starting worker " << sched_getcpu() << std::endl;
 	evtimer_add(m_keep_alive, &keep_alive_tv);
 
 
 	if (sched_getcpu() == 0)
 		this->control();
+
+	m_plat_base[sched_getcpu()] = m_ev_base;	
 
 	event_base_dispatch(m_ev_base);
 }
