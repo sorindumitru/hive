@@ -7,6 +7,7 @@
 #include <map>
 
 #include <platform.h>
+#include <timer.h>
 
 class worker {
 public:

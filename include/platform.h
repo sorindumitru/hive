@@ -8,12 +8,9 @@
 extern "C" {
 #endif
 
-typedef void (*callback_t)(void *arg);
-
 extern void *plat_alloc(size_t size);
 extern void plat_memcpy(void *to, void *from, size_t len);
 extern void plat_free(void *data);
-extern void plat_add_timer(callback_t *callback, int timeout);
 
 struct packet;
 struct address;

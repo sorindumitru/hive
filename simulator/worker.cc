@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "worker.hpp"
+#include <worker.hpp>
 
 static command_handlers_t command_handlers;
 
