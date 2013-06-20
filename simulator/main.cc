@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <vector>
 
-#include <simulator/worker.hpp>
+#include "worker.hpp"
 
 int main(int argc, const char *argv[])
 {

@@ -4,7 +4,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <simulator/worker.hpp>
+#include "worker.hpp"
 
 static struct timeval keep_alive_tv = {
 	.tv_sec = 60,
