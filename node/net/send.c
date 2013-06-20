@@ -1,5 +1,0 @@
-
-int sendto(packet *packet)
-{
-
-}
