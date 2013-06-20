@@ -4,6 +4,8 @@
 #include <event.h>
 #include <sched.h>
 
+#include <map>
+
 #include <platform.h>
 
 class worker {
@@ -20,7 +22,12 @@ private:
 	struct event_base *m_ev_base;
 	struct event *m_keep_alive;
 	struct event *m_control_event;
+
+	void cmd_load(const char *);
 };
+
+typedef void(worker::*command_handler)(const char*);
+typedef std::map<const char*, command_handler> command_handlers_t;
 
 static const int max_num_workers = 4;
 extern worker *workers[max_num_workers];

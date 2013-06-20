@@ -3,8 +3,11 @@
 #include <pthread.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "worker.hpp"
+
+static command_handlers_t command_handlers;
 
 static struct timeval keep_alive_tv = {
 	.tv_sec = 60,
@@ -74,15 +77,27 @@ void worker::control()
 			EV_READ | EV_PERSIST, do_command, this);
 	event_add(m_control_event, NULL);
 	std::cout << "Started control thread" << std::endl;
+
+	command_handlers["load "] = &worker::cmd_load;
+}
+
+void worker::cmd_load(const char * args)
+{
+	std::cout << args << std::endl;
 }
 
 void worker::command(int sock)
 {
-	char buffer[1024];
+	char buffer[1024] = {0};
 
 	read(m_control_sk, buffer, 1024);
 
-	/* TODO: run commands */
+	for (command_handlers_t::const_iterator i = command_handlers.begin(); i != command_handlers.end(); ++i) {
+		size_t command_len = strlen(i->first);
+
+		if (strlen(buffer) >= command_len && strncmp(buffer, i->first, command_len) == 0)
+			(this->*i->second)(buffer + command_len);
+	}
 }
 
 worker *workers[max_num_workers];
