@@ -8,4 +8,4 @@ target_link_libraries(hive platform event)
 
 INSTALL(TARGETS hive DESTINATION "${PROJECT_SOURCE_DIR}/bin")
 
-
+add_subdirectory(tests)
