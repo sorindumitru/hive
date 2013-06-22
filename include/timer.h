@@ -10,16 +10,16 @@ typedef void (*callback_t)(void *arg);
 struct timer {
 	unsigned char	recursive:1;
 	unsigned long	expires;
-	callback_t	*cb;
+	callback_t	cb;
 	void		*arg;
 	void		*plat_priv;
 };
 
-extern struct timer *timer_new(callback_t *cb, unsigned long expires);
+extern struct timer *timer_new(callback_t cb, unsigned long expires);
 extern void timer_add(struct timer *timer);
 extern void timer_free(struct timer *timer);
 
-static inline struct timer *timer_new_recursive(callback_t *cb, unsigned long expires)
+static inline struct timer *timer_new_recursive(callback_t cb, unsigned long expires)
 {
 	struct timer *t = timer_new(cb, expires);
 
