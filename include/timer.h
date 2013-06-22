@@ -17,6 +17,7 @@ struct timer {
 
 extern struct timer *timer_new(callback_t cb, unsigned long expires);
 extern void timer_add(struct timer *timer);
+extern void timer_del(struct timer *timer);
 extern void timer_free(struct timer *timer);
 
 static inline struct timer *timer_new_recursive(callback_t cb, unsigned long expires)

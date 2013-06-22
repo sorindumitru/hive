@@ -19,6 +19,7 @@ struct timer *timer_new(callback_t cb, unsigned long expires)
 
 	timer->expires = expires;
 	timer->cb = cb;
+	timer->plat_priv = NULL;
 
 	return timer;
 }
@@ -38,6 +39,13 @@ void timer_add(struct timer *timer)
 	evtimer_add(ev, &timeout);
 }
 
+void timer_del(struct timer *timer)
+{
+	struct event *ev = timer->plat_priv;
+	if (ev != NULL)
+		evtimer_del(ev);
+}
+
 void timer_free(struct timer *timer)
 {
 	struct event *ev = timer->plat_priv;
@@ -45,5 +53,3 @@ void timer_free(struct timer *timer)
 	event_free(ev);
 	free(timer);
 }
-
-struct event_base *m_plat_base[16];

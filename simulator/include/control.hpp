@@ -4,6 +4,10 @@
 #include <event.h>
 #include <map>
 
+#include <net/utils.h>
+
+struct node;
+
 class control {
 public:
 	control();
@@ -16,16 +20,47 @@ private:
 	static void do_command(int fs, short event, void *arg);
 	void command(int sock);
 
-	struct module_data {
-		void *handle;
-		void *data;
-	};
-
-	typedef std::map<std::string, module_data> module_map_t;
-	module_map_t module_map;
-
 	void cmd_load(char *);
 	void cmd_unload(char *);
+	void cmd_start(char *);
+	void cmd_stop(char *);
+
+	typedef void *(*node_init_t)(void);
+	typedef struct node *(*node_getnode_t)(void *);
+	typedef void (*node_exit_t)(void *);
+	typedef void (*node_start_t)(void *);
+	typedef void (*node_stop_t)(void *);
+
+	struct lib_functions {
+		node_init_t node_init;
+		node_getnode_t node_getnode;
+		node_exit_t node_exit;
+		node_start_t node_start;
+		node_stop_t node_stop;
+	};
+
+	typedef std::map<void*, struct lib_functions> lib_functions_map_t;
+	lib_functions_map_t m_lib_functions_map;
+
+	void *add_library(const char *name);
+	const struct lib_functions &get_lib_functions(void *dlhandle) const;
+
+	struct node_data {
+		void *dlhandle;
+		void *data;
+		struct node *node;
+	};
+
+	typedef std::map<unsigned, struct node_data> nodes_t;
+	nodes_t m_nodes;
+	unsigned m_node_index;
+
+	unsigned add_node_data(void *dlhandle, void *data, struct node *node);
+	const struct node_data *get_node_data(unsigned index) const;
+	void del_node(unsigned index);
+
+	typedef std::map<address, struct node*> nodes_by_address_t;
+	nodes_by_address_t m_nodes_by_address;
 };
 
 typedef void(control::*command_handler)(char*);

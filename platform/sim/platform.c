@@ -16,3 +16,8 @@ void plat_free(void *data)
 {
 	free(data);
 }
+
+void plat_memset(void *ptr, int value, size_t num)
+{
+	memset(ptr, value, num);
+}
