@@ -72,13 +72,19 @@ typedef void (*node_exit_t)(void *);
 void control::cmd_load(char *args)
 {
 	char *name = strtok(args, " \n\t");
+
+	if (module_map.find(name) != module_map.end()) {
+		std::cerr << name << " is already loaded" << std::endl;
+		return;
+	}
+
 	char library[64] = {0};
 
 	sprintf(library, "lib%s.so", name);
 
 	void *handle = dlopen(library, RTLD_NOW);
 	if (!handle) {
-		std::cerr << dlerror();
+		std::cerr << dlerror() << std::endl;
 		return;
 	}
 
@@ -89,28 +95,32 @@ void control::cmd_load(char *args)
 		std::cerr << dlerror();
 		return;
 	}
-	void *priv = init();
+
+	module_map[name].handle = handle;
+	module_map[name].data = init();
+
+	std::cout << name << " loaded" << std::endl;
 }
 
 void control::cmd_unload(char *args)
 {
 	char *name = strtok(args, " \n\t");
-	char library[64] = {0};
 
-	sprintf(library, "lib%s.so", name);
-
-	void *handle = dlopen(library, RTLD_NOW);
-	if (!handle) {
-		std::cerr << dlerror();
+	if (module_map.find(name) == module_map.end()) {
+		std::cerr << name << " is not loaded" << std::endl;
 		return;
 	}
 
 	char exit_func[256] = {0};
 	sprintf(exit_func, "%s_exit", name);
-	node_exit_t node_exit = (node_exit_t) dlsym(handle, exit_func);
+	node_exit_t node_exit = (node_exit_t) dlsym(module_map[name].handle, exit_func);
 	if (!node_exit) {
 		std::cerr << dlerror();
 		return;
 	}
-	node_exit(NULL);
+
+	node_exit(module_map[name].data);
+	module_map.erase(name);
+
+	std::cout << name << " unloaded" << std::endl;
 }

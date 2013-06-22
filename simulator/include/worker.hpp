@@ -15,7 +15,6 @@ public:
 	~worker();
 	void addTimer(callback_t *callback, int timeout);
 	void start();
-	void acceptControlConn();
 private:
 	struct event_base *m_ev_base;
 	struct event *m_keep_alive;

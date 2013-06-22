@@ -8,7 +8,6 @@ class control {
 public:
 	control();
 	~control();
-	void acceptControlConn();
 
 private:
 	int m_control_sk;
@@ -16,6 +15,14 @@ private:
 
 	static void do_command(int fs, short event, void *arg);
 	void command(int sock);
+
+	struct module_data {
+		void *handle;
+		void *data;
+	};
+
+	typedef std::map<std::string, module_data> module_map_t;
+	module_map_t module_map;
 
 	void cmd_load(char *);
 	void cmd_unload(char *);
