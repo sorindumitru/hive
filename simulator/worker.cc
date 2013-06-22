@@ -1,3 +1,4 @@
+#include <dlfcn.h>
 #include <iostream>
 #include <netinet/in.h>
 #include <pthread.h>
@@ -27,10 +28,6 @@ worker::worker()
 }
 
 worker::~worker()
-{
-}
-
-void worker::addTimer(callback_t *callback, int timeout)
 {
 }
 
@@ -82,11 +79,56 @@ void worker::control()
 	std::cout << "Started control thread" << std::endl;
 
 	command_handlers["load "] = &worker::cmd_load;
+	command_handlers["unload "] = &worker::cmd_unload;
 }
 
-void worker::cmd_load(const char * args)
+typedef void *(*node_init_t)(void);
+typedef void (*node_exit_t)(void *);
+
+void worker::cmd_load(char *args)
 {
-	std::cout << args << std::endl;
+	char *name = strtok(args, " \n\t");
+	char library[64] = {0};
+
+	sprintf(library, "lib%s.so", name);
+
+	void *handle = dlopen(library, RTLD_NOW);
+	if (!handle) {
+		std::cerr << dlerror();
+		return;
+	}
+
+	char init_func[256] = {0};
+	sprintf(init_func, "%s_init", name);
+	node_init_t init = (node_init_t) dlsym(handle, init_func);
+	if (!init) {
+		std::cerr << dlerror();
+		return;
+	}
+	void *priv = init();
+}
+
+void worker::cmd_unload(char *args)
+{
+	char *name = strtok(args, " \n\t");
+	char library[64] = {0};
+
+	sprintf(library, "lib%s.so", name);
+
+	void *handle = dlopen(library, RTLD_NOW);
+	if (!handle) {
+		std::cerr << dlerror();
+		return;
+	}
+
+	char exit_func[256] = {0};
+	sprintf(exit_func, "%s_exit", name);
+	node_exit_t node_exit = (node_exit_t) dlsym(handle, exit_func);
+	if (!node_exit) {
+		std::cerr << dlerror();
+		return;
+	}
+	node_exit(NULL);
 }
 
 void worker::command(int sock)

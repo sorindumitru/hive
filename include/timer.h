@@ -23,7 +23,7 @@ static inline struct timer *timer_new_recursive(callback_t cb, unsigned long exp
 {
 	struct timer *t = timer_new(cb, expires);
 
-	t->recursive = 0;
+	t->recursive = 1;
 
 	return t;
 }

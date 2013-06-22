@@ -30,6 +30,7 @@ void timer_add(struct timer *timer)
 			timer_cb, timer);
 	struct timeval timeout = {
 		.tv_sec = timer->expires,
+		.tv_usec = 0,
 	};
 
 	timer->plat_priv = ev;

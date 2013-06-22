@@ -14,8 +14,9 @@ struct node {
 	struct packet_queue *rcv_queue;
 
 	struct router *router;
-};
 
+	void *dlhandle;
+};
 #ifdef __cplusplus
 }
 #endif

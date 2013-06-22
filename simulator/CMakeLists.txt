@@ -4,7 +4,7 @@ include_directories("${PROJECT_SOURCE_DIR}/simulator/include")
 
 add_executable(hive main.cc worker.cc)
 
-target_link_libraries(hive platform event)
+target_link_libraries(hive platform event dl)
 
 INSTALL(TARGETS hive DESTINATION "${PROJECT_SOURCE_DIR}/bin")
 

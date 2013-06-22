@@ -10,7 +10,7 @@ struct timers_data {
 
 void simple_callback(void *_)
 {
-	printf("SUCESS");
+	printf("SUCESS\n");
 }
 
 void recursive_callback(void *_)
@@ -25,6 +25,9 @@ void *timers_init(void)
 	struct timers_data *data= plat_alloc(sizeof(*data));
 	data->simple = timer_new(simple_callback, 10);
 	data->recursive = timer_new_recursive(recursive_callback, 5);
+
+	timer_add(data->simple);
+	timer_add(data->recursive);
 
 	return data;
 }
