@@ -13,13 +13,13 @@ static command_handlers_t command_handlers;
 
 bool operator< (const address &left, const address &right)
 {
-    return 
-    	left.mac_address[0] < right.mac_address[0] &&
-    	left.mac_address[1] < right.mac_address[1] &&
-    	left.mac_address[2] < right.mac_address[2] &&
-    	left.mac_address[3] < right.mac_address[3] &&
-    	left.mac_address[4] < right.mac_address[4] &&
-    	left.mac_address[5] < right.mac_address[5];
+	for (int i = 0; i < MAC_ADDRESS_LEN; i++) {
+		if (left.mac_address[i] == right.mac_address[i])
+			continue;
+		return left.mac_address[i] < right.mac_address[i];
+	}
+
+	return false;
 }
 
 control::control()
@@ -42,7 +42,7 @@ control::control()
 				&one, sizeof(one)) < 0)
 		perror("Could not set so reuseaddr on control socket");
 
-    command_handlers["load "] = &control::cmd_load;
+	command_handlers["load "] = &control::cmd_load;
 	command_handlers["unload "] = &control::cmd_unload;
 	command_handlers["start "] = &control::cmd_start;
 	command_handlers["stop "] = &control::cmd_stop;
