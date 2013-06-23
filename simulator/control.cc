@@ -106,13 +106,13 @@ void control::cmd_load(Json::Value &root)
 	if (node)
 		return;
 
-	void *handle = add_library(library.c_str());
+	void *handle = m_libmanager.load_node_library(library.c_str());
 	if (handle == NULL)
 		return;
 
-	const struct lib_functions &lib_funcs = get_lib_functions(handle);
+	const struct node_library_t &node_lib = m_libmanager.get_node_library(handle);
 
-	void *data = lib_funcs.node_init();
+	void *data = node_lib.init();
 	node = (struct node *) malloc(sizeof(*node));
 
 	Json::Value nic = root["nic"];
@@ -129,7 +129,7 @@ void control::cmd_load(Json::Value &root)
 
 	node->router = router_get_by_name(router["type"].asString().c_str());
 
-	node->index =  add_node_data(handle, node);
+	node->index = add_node_data(handle, node);
 	node->name = strdup(name.c_str());
 	node->priv = data;
 	node_add(node);
@@ -150,9 +150,9 @@ void control::cmd_unload(Json::Value &root)
 		return;
 	}
 
-	const struct lib_functions &lib_funcs = get_lib_functions(node_data->dlhandle);
+	const struct node_library_t &node_lib = m_libmanager.get_node_library(node_data->dlhandle);
 
-	lib_funcs.node_exit(node_data->data);
+	node_lib.exit(node_data->node);
 	del_node(index);
 
 	std::cout << "removed node " << index << std::endl;
@@ -171,9 +171,9 @@ void control::cmd_start(Json::Value &root)
 		return;
 	}
 
-	const struct lib_functions &lib_funcs = get_lib_functions(node_data->dlhandle);
+	const struct node_library_t &node_lib = m_libmanager.get_node_library(node_data->dlhandle);
 
-	lib_funcs.node_start(node_data->node);
+	node_lib.start(node_data->node);
 
 	std::cout << "started node " << index << std::endl;
 }
@@ -191,9 +191,9 @@ void control::cmd_stop(Json::Value &root)
 		return;
 	}
 
-	const struct lib_functions &lib_funcs = get_lib_functions(node_data->dlhandle);
+	const struct node_library_t &node_lib = m_libmanager.get_node_library(node_data->dlhandle);
 
-	lib_funcs.node_stop(node_data->data);
+	node_lib.stop(node_data->node);
 
 	std::cout << "stopped node " << index << std::endl;
 }
@@ -203,9 +203,6 @@ unsigned control::add_node_data(void *dlhandle, struct node* node)
 	struct node_data &node_data = m_nodes[m_node_index];
 	node_data.dlhandle = dlhandle;
 	node_data.node = node;
-
-	// TODO: Check for duplicate addresses
-	m_nodes_by_address[node->nic->address] = node;
 
 	return m_node_index++;
 }
@@ -218,68 +215,11 @@ const struct control::node_data *control::get_node_data(unsigned index) const
 
 void control::del_node(unsigned index)
 {
-	m_nodes_by_address.erase(m_nodes[index].node->nic->address);
+	struct node *node = m_nodes[index].node;
 
-	node_del(m_nodes[index].node);
+	node_del(node);
 	m_nodes.erase(index);
-}
 
-void *control::add_library(const char *name)
-{
-	// Add mappings between library name and node functions
-
-	char library[64] = {0};
-	sprintf(library, "lib%s.so", name);
-
-	void *handle = dlopen(library, RTLD_NOW);
-	if (!handle) {
-		std::cerr << dlerror() << std::endl;
-		return NULL;
-	}
-
-	if (m_lib_functions_map.find(handle) != m_lib_functions_map.end())
-		return handle;
-
-	char func_name[256] = {0};
-	lib_functions lib_funcs;
-
-	sprintf(func_name, "%s_init", name);
-	lib_funcs.node_init = (node_init_t) dlsym(handle, func_name);
-	if (!lib_funcs.node_init) {
-		std::cerr << dlerror() << std::endl;
-		return NULL;
-	}
-
-	sprintf(func_name, "%s_exit", name);
-	lib_funcs.node_exit = (node_exit_t) dlsym(handle, func_name);
-	if (!lib_funcs.node_exit) {
-		std::cerr << dlerror() << std::endl;
-		return NULL;
-	}
-
-	sprintf(func_name, "%s_start", name);
-	lib_funcs.node_start = (node_start_t) dlsym(handle, func_name);
-	if (!lib_funcs.node_start) {
-		std::cerr << dlerror() << std::endl;
-		return NULL;
-	}
-
-	sprintf(func_name, "%s_stop", name);
-	lib_funcs.node_stop = (node_stop_t) dlsym(handle, func_name);
-	if (!lib_funcs.node_stop) {
-		std::cerr << dlerror() << std::endl;
-		return NULL;
-	}
-
-	m_lib_functions_map[handle] = lib_funcs;
-
-	return handle;
-}
-
-const struct control::lib_functions &control::get_lib_functions(void *dlhandle) const
-{
-	lib_functions_map_t::const_iterator i = m_lib_functions_map.find(dlhandle);
-	if (i == m_lib_functions_map.end())
-		perror("cannot find library functions");
-	return i->second;
+	free(node->name);
+	free(node);
 }

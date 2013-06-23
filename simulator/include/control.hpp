@@ -5,6 +5,8 @@
 #include <jsoncpp/json/value.h>
 #include <map>
 
+#include <libmanager.hpp>
+
 #include <net/utils.h>
 
 struct node;
@@ -17,6 +19,7 @@ public:
 private:
 	int m_control_sk;
 	struct event *m_control_event;
+	libmanager m_libmanager;
 
 	static void do_command(int fs, short event, void *arg);
 	void command(int sock);
@@ -31,22 +34,8 @@ private:
 	typedef void (*node_start_t)(void *);
 	typedef void (*node_stop_t)(void *);
 
-	struct lib_functions {
-		node_init_t node_init;
-		node_exit_t node_exit;
-		node_start_t node_start;
-		node_stop_t node_stop;
-	};
-
-	typedef std::map<void*, struct lib_functions> lib_functions_map_t;
-	lib_functions_map_t m_lib_functions_map;
-
-	void *add_library(const char *name);
-	const struct lib_functions &get_lib_functions(void *dlhandle) const;
-
 	struct node_data {
 		void *dlhandle;
-		void *data;
 		struct node *node;
 	};
 
