@@ -56,7 +56,7 @@ private:
 	nodes_t m_nodes;
 	unsigned m_node_index;
 
-	unsigned add_node_data(void *dlhandle, void *data, struct node *node);
+	unsigned add_node_data(void *dlhandle, struct node *node);
 	const struct node_data *get_node_data(unsigned index) const;
 	void del_node(unsigned index);
 

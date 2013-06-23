@@ -9,8 +9,10 @@ extern "C" {
 #endif
 
 struct nic;
+struct node;
 
 typedef struct nic *(*clone_nic_t)(struct nic *nic, struct address *address);
+typedef void (*recv_t)(struct node *node, struct packet *packet);
 typedef int (*sendto_t)(struct packet *packet, struct address *address);
 
 struct nic {
@@ -20,6 +22,7 @@ struct nic {
 	void *priv;
 
 	clone_nic_t clone;
+	recv_t recv;
 	sendto_t sendto;
 
 	struct list_head list;

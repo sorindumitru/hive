@@ -9,6 +9,7 @@
 #include <control.hpp>
 
 #include <node.h>
+#include <net/routing.h>
 
 extern event_base *m_plat_base[16];
 static command_handlers_t command_handlers;
@@ -16,9 +17,9 @@ static command_handlers_t command_handlers;
 bool operator< (const address &left, const address &right)
 {
 	for (int i = 0; i < MAC_ADDRESS_LEN; i++) {
-		if (left.mac_address[i] == right.mac_address[i])
+		if (left.mac[i] == right.mac[i])
 			continue;
-		return left.mac_address[i] < right.mac_address[i];
+		return left.mac[i] < right.mac[i];
 	}
 
 	return false;
@@ -99,6 +100,11 @@ void control::cmd_load(Json::Value &root)
 		return;
 	
 	std::string library = root["library"].asString();
+	std::string name = root["name"].asString();
+
+	struct node *node = node_find_by_name(name.c_str());
+	if (node)
+		return;
 
 	void *handle = add_library(library.c_str());
 	if (handle == NULL)
@@ -107,7 +113,7 @@ void control::cmd_load(Json::Value &root)
 	const struct lib_functions &lib_funcs = get_lib_functions(handle);
 
 	void *data = lib_funcs.node_init();
-	struct node *node = lib_funcs.node_getnode(data);
+	node = (struct node *) malloc(sizeof(*node));
 
 	Json::Value nic = root["nic"];
 
@@ -119,7 +125,13 @@ void control::cmd_load(Json::Value &root)
 	node->nic = nic_clone(nic["type"].asString().c_str(),
 			address_from_string(nic["address"].asString().c_str()));
 
-	node->index =  add_node_data(handle, data, node);
+	Json::Value router = root["routing"];
+
+	node->router = router_get_by_name(router["type"].asString().c_str());
+
+	node->index =  add_node_data(handle, node);
+	node->name = strdup(name.c_str());
+	node->priv = data;
 	node_add(node);
 
 	std::cout << "created node " << node->index << std::endl;
@@ -161,7 +173,7 @@ void control::cmd_start(Json::Value &root)
 
 	const struct lib_functions &lib_funcs = get_lib_functions(node_data->dlhandle);
 
-	lib_funcs.node_start(node_data->data);
+	lib_funcs.node_start(node_data->node);
 
 	std::cout << "started node " << index << std::endl;
 }
@@ -186,11 +198,10 @@ void control::cmd_stop(Json::Value &root)
 	std::cout << "stopped node " << index << std::endl;
 }
 
-unsigned control::add_node_data(void *dlhandle, void *data, struct node* node)
+unsigned control::add_node_data(void *dlhandle, struct node* node)
 {
 	struct node_data &node_data = m_nodes[m_node_index];
 	node_data.dlhandle = dlhandle;
-	node_data.data = data;
 	node_data.node = node;
 
 	// TODO: Check for duplicate addresses
