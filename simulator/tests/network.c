@@ -18,6 +18,8 @@ void network_start(void *arg)
 
 		/* Wait to receive packet */
 		while (hive_recv(node, data, &len) != -EAGAIN);
+
+		printf("Finally received packet %s\n", data);
 	} else {
 		unsigned char *data = "Hello, server, this is client!";
 		struct address addr = address_from_string("00:00:00:22:33:44");

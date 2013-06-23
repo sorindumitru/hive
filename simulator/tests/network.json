@@ -1,0 +1,4 @@
+{ "load" : { "library" : "network", "name" : "sender", "nic" : { "type" : "simplenic", "address" : "00:00:00:11:22:33" }, "routing" : { "type" : "broadcast" } } }
+{ "load" : { "library" : "network", "name" : "receiver", "nic" : { "type" : "simplenic", "address" : "00:00:00:22:33:44" }, "routing" : { "type" : "broadcast" } } }
+{ "start" : { "index" : 1 }}
+{ "start" : { "index" : 2 }}

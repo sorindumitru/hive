@@ -44,8 +44,6 @@ int hive_recv(struct node *node, unsigned char *buf, size_t *len)
 	if (packet->len > *len)
 		return -EMSGSIZE;
 
-	printf("Received packet of len %d: %s\n", packet->len, packet->data);
-
 	plat_memcpy(buf, packet->data, packet->len);
 	packet_free(packet);
 	return packet->len;
@@ -62,7 +60,6 @@ int hive_recvfrom(struct node *node, unsigned char *buf, size_t *len, struct add
 		return -EMSGSIZE;
 
 	/* TODO: Validate address */
-	printf("Received packet of len %d: %s\n", packet->len, packet->data);
 
 	plat_memcpy(buf, packet->data, packet->len);
 	packet_free(packet);

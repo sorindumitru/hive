@@ -115,7 +115,7 @@ static inline struct packet *packet_dequeue(struct packet_queue *queue)
 	if (list_empty(&queue->queue))
 		return NULL;
 
-	packet = list_entry(&queue->queue, struct packet, list);
+	packet = list_entry(queue->queue.next, struct packet, list);
 	list_del(&packet->list);
 	queue->qlen--;
 

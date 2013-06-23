@@ -43,10 +43,6 @@ int simplenic_sendto(struct node *node, struct packet *packet, struct address *a
 	struct node *dest;
 	struct eth_hdr *hdr;
 	
-	printf("Sendin to ");
-	address_print(address);
-	printf("\n");
-
 	/* Build header */
 	hdr = plat_alloc(sizeof(*hdr));
 	memset(hdr, 0, sizeof(*hdr));
@@ -57,13 +53,6 @@ int simplenic_sendto(struct node *node, struct packet *packet, struct address *a
 	packet->header = (void *) hdr;
 
 	list_for_each_entry(dest, &nodes, list) {
-		printf("Tring to send to  %hx:%hx:%hx:%hx:%hx:%hx\n",
-				dest->nic->address.mac[0],
-				dest->nic->address.mac[1],
-				dest->nic->address.mac[2],
-				dest->nic->address.mac[3],
-				dest->nic->address.mac[4],
-				dest->nic->address.mac[5]);
 		if (address_match(&dest->nic->address, address) && dest != node)
 			dest->nic->recv(dest, packet);
 	}
@@ -71,7 +60,6 @@ int simplenic_sendto(struct node *node, struct packet *packet, struct address *a
 
 void simplenic_recv(struct node *node, struct packet *packet)
 {
-	printf("Received packet %s %s\n", node->name, packet->data);
 	/* Check if it is for the router of the node */
 	if (node->router->recv(packet))
 		return;
