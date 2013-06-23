@@ -24,7 +24,7 @@ int hive_sendto(struct node *node, unsigned char *buf, size_t len, struct addres
 
 	/* TODO: Validate nexthop */
 
-	plat_sendto(packet, nexthop);
+	node->nic->sendto(packet, nexthop);
 
 	return len;
 
@@ -36,7 +36,7 @@ out:
 
 int hive_recv(struct node *node, unsigned char *buf, size_t *len)
 {
-	struct packet *packet = packet_dequeue(node->rcv_queue);
+	struct packet *packet = packet_dequeue(&node->nic->rcv_queue);
 
 	if (!packet)
 		return -EAGAIN;
@@ -51,7 +51,7 @@ int hive_recv(struct node *node, unsigned char *buf, size_t *len)
 
 int hive_recvfrom(struct node *node, unsigned char *buf, size_t *len, struct address *from)
 {
-	struct packet *packet = packet_dequeue(node->rcv_queue);
+	struct packet *packet = packet_dequeue(&node->nic->rcv_queue);
 
 	if (!packet)
 		return -EAGAIN;

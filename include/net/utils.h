@@ -16,6 +16,18 @@ struct address {
 	};
 };
 
+static inline struct address address_from_string(const char *source)
+{
+	struct address addr;
+	int i, j;
+
+	for (i = 0, j = 0; i < MAC_ADDRESS_LEN; i++, j+=2) {
+		addr.mac_address[i] = source[j]*16 + source[j+1];
+	}
+
+	return addr;
+}
+
 struct packet {
 	size_t			len;
 	char			*data;
@@ -32,6 +44,12 @@ struct packet_queue {
 	size_t			qlen;
 	struct list_head	queue;
 };
+
+static inline void packet_queue_init(struct packet_queue *queue)
+{
+	queue->qlen = 0;
+	INIT_LIST_HEAD(&queue->queue);
+}
 
 static inline struct packet *packet_dequeue(struct packet_queue *queue)
 {

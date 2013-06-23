@@ -109,6 +109,16 @@ void control::cmd_load(Json::Value &root)
 	void *data = lib_funcs.node_init();
 	struct node *node = lib_funcs.node_getnode(data);
 
+	Json::Value nic = root["nic"];
+
+	if (nic.isNull())
+		return;
+
+	std::string json_addr = nic["address"].asString();
+
+	node->nic = nic_clone(nic["type"].asString().c_str(),
+			address_from_string(nic["address"].asString().c_str()));
+
 	unsigned index = add_node_data(handle, data, node);
 
 	std::cout << "created node " << index << std::endl;
@@ -183,7 +193,7 @@ unsigned control::add_node_data(void *dlhandle, void *data, struct node* node)
 	node_data.node = node;
 
 	// TODO: Check for duplicate addresses
-	m_nodes_by_address[node->address] = node;
+	m_nodes_by_address[node->nic->address] = node;
 
 	return m_node_index++;
 }
@@ -196,7 +206,7 @@ const struct control::node_data *control::get_node_data(unsigned index) const
 
 void control::del_node(unsigned index)
 {
-	m_nodes_by_address.erase(m_nodes[index].node->address);
+	m_nodes_by_address.erase(m_nodes[index].node->nic->address);
 
 	m_nodes.erase(index);
 }

@@ -6,10 +6,14 @@
 
 #include "worker.hpp"
 
+#include <platform.h>
+
 int main(int argc, const char *argv[])
 {
 	std::cout << "Starting hive simulator" << std::endl;
 	std::vector<pthread_t> workers;
+
+	platform_init();
 
 	for (int i = 0; i < max_num_workers; i++) {
 		pthread_t thread;

@@ -1,6 +1,7 @@
 #ifndef HIVE_NODE_H_
 #define HIVE_NODE_H_
 
+#include <net/nic.h>
 #include <net/utils.h>
 
 #ifdef __cplusplus
@@ -10,9 +11,7 @@ extern "C" {
 struct router;
 
 struct node {
-	struct address address;	
-	struct packet_queue *rcv_queue;
-
+	struct nic *nic;
 	struct router *router;
 
 	void *dlhandle;

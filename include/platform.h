@@ -18,6 +18,8 @@ struct address;
 
 extern void plat_sendto(struct packet *packet, struct address *to);
 
+extern void platform_init(void);
+
 
 #ifdef __cplusplus
 }
