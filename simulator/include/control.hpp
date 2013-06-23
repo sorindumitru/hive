@@ -2,6 +2,7 @@
 #define HIVE_SIM_CONTROL_HPP_
 
 #include <event.h>
+#include <jsoncpp/json/value.h>
 #include <map>
 
 #include <net/utils.h>
@@ -20,10 +21,10 @@ private:
 	static void do_command(int fs, short event, void *arg);
 	void command(int sock);
 
-	void cmd_load(char *);
-	void cmd_unload(char *);
-	void cmd_start(char *);
-	void cmd_stop(char *);
+	void cmd_load(Json::Value &);
+	void cmd_unload(Json::Value &);
+	void cmd_start(Json::Value &);
+	void cmd_stop(Json::Value &);
 
 	typedef void *(*node_init_t)(void);
 	typedef struct node *(*node_getnode_t)(void *);
@@ -63,7 +64,7 @@ private:
 	nodes_by_address_t m_nodes_by_address;
 };
 
-typedef void(control::*command_handler)(char*);
+typedef void(control::*command_handler)(Json::Value &);
 typedef std::map<const char*, command_handler> command_handlers_t;
 
 #endif /* end of include guard: HIVE_SIM_CONTROL_HPP_ */

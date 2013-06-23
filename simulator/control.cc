@@ -2,6 +2,8 @@
 #include <sys/socket.h>
 #include <iostream>
 #include <unistd.h>
+#include <jsoncpp/json/json.h>
+#include <jsoncpp/json/reader.h>
 #include <string.h>
 
 #include <control.hpp>
@@ -42,10 +44,10 @@ control::control()
 				&one, sizeof(one)) < 0)
 		perror("Could not set so reuseaddr on control socket");
 
-	command_handlers["load "] = &control::cmd_load;
-	command_handlers["unload "] = &control::cmd_unload;
-	command_handlers["start "] = &control::cmd_start;
-	command_handlers["stop "] = &control::cmd_stop;
+	command_handlers["load"] = &control::cmd_load;
+	command_handlers["unload"] = &control::cmd_unload;
+	command_handlers["start"] = &control::cmd_start;
+	command_handlers["stop"] = &control::cmd_stop;
 
 	listen(m_control_sk, 64);
 	m_control_event = event_new(m_plat_base[sched_getcpu()],
@@ -70,25 +72,35 @@ void control::do_command(int fd, short event, void *arg)
 
 void control::command(int sock)
 {
-	char buffer[1024] = {0};
+	char buffer[2048] = {0};
 
 	read(m_control_sk, buffer, 1024);
 
-	for (command_handlers_t::const_iterator i = command_handlers.begin(); i != command_handlers.end(); ++i) {
-		size_t command_len = strlen(i->first);
+	Json::Value root;
+	Json::Reader reader;
 
-		if (strlen(buffer) >= command_len && strncmp(buffer, i->first, command_len) == 0)
-			(this->*i->second)(buffer + command_len);
+	if (!reader.parse(buffer, root)) {
+		std::cerr << "could not parse command" << std::endl;
+		return;
+	}
+
+	for (command_handlers_t::const_iterator i = command_handlers.begin(); i != command_handlers.end(); ++i) {
+		if (!root[i->first].isNull()) {
+			(this->*i->second)(root[i->first]);
+		}
 	}
 }
 
 // Node command handling
 
-void control::cmd_load(char *args)
+void control::cmd_load(Json::Value &root)
 {
-	char *name = strtok(args, " \n\t");
+	if (root["library"].isNull())
+		return;
+	
+	std::string library = root["library"].asString();
 
-	void *handle = add_library(name);
+	void *handle = add_library(library.c_str());
 	if (handle == NULL)
 		return;
 
@@ -102,15 +114,12 @@ void control::cmd_load(char *args)
 	std::cout << "created node " << index << std::endl;
 }
 
-void control::cmd_unload(char *args)
+void control::cmd_unload(Json::Value &root)
 {
-	char *arg = strtok(args, " \n\t");
-	if (arg == NULL) {
-		std::cerr << "usage: unload node_index" << std::endl;
+	if (root["index"].isNull())
 		return;
-	}
-
-	unsigned index = atoi(arg);
+	
+	unsigned int index = root["index"].asInt();
 	
 	const struct node_data *node_data = get_node_data(index);
 	if (node_data == NULL) {
@@ -126,15 +135,12 @@ void control::cmd_unload(char *args)
 	std::cout << "removed node " << index << std::endl;
 }
 
-void control::cmd_start(char *args)
+void control::cmd_start(Json::Value &root)
 {
-	char *arg = strtok(args, " \n\t");
-	if (arg == NULL) {
-		std::cerr << "usage: start node_index" << std::endl;
+	if (root["index"].isNull())
 		return;
-	}
-
-	unsigned index = atoi(arg);
+	
+	unsigned int index = root["index"].asInt();
 
 	const struct node_data *node_data = get_node_data(index);
 	if (node_data == NULL) {
@@ -149,15 +155,12 @@ void control::cmd_start(char *args)
 	std::cout << "started node " << index << std::endl;
 }
 
-void control::cmd_stop(char *args)
+void control::cmd_stop(Json::Value &root)
 {
-	char *arg = strtok(args, " \n\t");
-	if (arg == NULL) {
-		std::cerr << "usage: stop node_index" << std::endl;
+	if (root["index"].isNull())
 		return;
-	}
-
-	unsigned index = atoi(arg);
+	
+	unsigned int index = root["index"].asInt();
 
 	const struct node_data *node_data = get_node_data(index);
 	if (node_data == NULL) {
