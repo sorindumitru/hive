@@ -119,9 +119,10 @@ void control::cmd_load(Json::Value &root)
 	node->nic = nic_clone(nic["type"].asString().c_str(),
 			address_from_string(nic["address"].asString().c_str()));
 
-	unsigned index = add_node_data(handle, data, node);
+	node->index =  add_node_data(handle, data, node);
+	node_add(node);
 
-	std::cout << "created node " << index << std::endl;
+	std::cout << "created node " << node->index << std::endl;
 }
 
 void control::cmd_unload(Json::Value &root)
@@ -208,6 +209,7 @@ void control::del_node(unsigned index)
 {
 	m_nodes_by_address.erase(m_nodes[index].node->nic->address);
 
+	node_del(m_nodes[index].node);
 	m_nodes.erase(index);
 }
 

@@ -11,11 +11,18 @@ extern "C" {
 struct router;
 
 struct node {
+	int index;
 	struct nic *nic;
 	struct router *router;
 
 	void *dlhandle;
+
+	struct list_head list;
 };
+
+extern void node_add(struct node *node);
+extern void node_del(struct node *node);
+
 #ifdef __cplusplus
 }
 #endif
