@@ -250,13 +250,6 @@ void *control::add_library(const char *name)
 		return NULL;
 	}
 
-	sprintf(func_name, "%s_getnode", name);
-	lib_funcs.node_getnode = (node_getnode_t) dlsym(handle, func_name);
-	if (!lib_funcs.node_getnode) {
-		std::cerr << dlerror() << std::endl;
-		return NULL;
-	}
-
 	sprintf(func_name, "%s_exit", name);
 	lib_funcs.node_exit = (node_exit_t) dlsym(handle, func_name);
 	if (!lib_funcs.node_exit) {

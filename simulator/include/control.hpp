@@ -27,14 +27,12 @@ private:
 	void cmd_stop(Json::Value &);
 
 	typedef void *(*node_init_t)(void);
-	typedef struct node *(*node_getnode_t)(void *);
 	typedef void (*node_exit_t)(void *);
 	typedef void (*node_start_t)(void *);
 	typedef void (*node_stop_t)(void *);
 
 	struct lib_functions {
 		node_init_t node_init;
-		node_getnode_t node_getnode;
 		node_exit_t node_exit;
 		node_start_t node_start;
 		node_stop_t node_stop;
