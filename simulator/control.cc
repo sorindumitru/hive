@@ -139,11 +139,21 @@ void control::cmd_load(Json::Value &root)
 
 void control::cmd_unload(Json::Value &root)
 {
-	if (root["index"].isNull())
+	Json::Value &index = root["index"];
+
+	if (index.isNull())
 		return;
-	
-	unsigned int index = root["index"].asInt();
-	
+
+	if (index.isArray()) {
+		for (unsigned i = 0; i < index.size(); i++)
+			unload_node(index[i].asInt());
+	} else {
+		unload_node(index.asInt());
+	}
+}
+
+void control::unload_node(unsigned index)
+{
 	const struct node_data *node_data = get_node_data(index);
 	if (node_data == NULL) {
 		std::cerr << "cannot find node " << index << std::endl;
@@ -160,11 +170,21 @@ void control::cmd_unload(Json::Value &root)
 
 void control::cmd_start(Json::Value &root)
 {
-	if (root["index"].isNull())
-		return;
-	
-	unsigned int index = root["index"].asInt();
+	Json::Value &index = root["index"];
 
+	if (index.isNull())
+		return;
+
+	if (index.isArray()) {
+		for (unsigned i = 0; i < index.size(); i++)
+			start_node(index[i].asInt());
+	} else {
+		start_node(index.asInt());
+	}
+}
+
+void control::start_node(unsigned index)
+{
 	const struct node_data *node_data = get_node_data(index);
 	if (node_data == NULL) {
 		std::cerr << "cannot find node " << index << std::endl;
@@ -180,11 +200,21 @@ void control::cmd_start(Json::Value &root)
 
 void control::cmd_stop(Json::Value &root)
 {
+	Json::Value &index = root["index"];
+
 	if (root["index"].isNull())
 		return;
 	
-	unsigned int index = root["index"].asInt();
+	if (index.isArray()) {
+		for (unsigned i = 0; i < index.size(); i++)
+			stop_node(index[i].asInt());
+	} else {
+		stop_node(index.asInt());
+	}
+}
 
+void control::stop_node(unsigned index)
+{
 	const struct node_data *node_data = get_node_data(index);
 	if (node_data == NULL) {
 		std::cerr << "cannot find node " << index << std::endl;

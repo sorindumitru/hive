@@ -22,6 +22,8 @@ int hive_sendto(struct node *node, unsigned char *buf, size_t len, struct addres
 	/* Get next this packet from routing */
 	nexthop = route_next_hop(node, to);
 
+	packet->src = &node->nic->address;
+
 	/* TODO: Validate nexthop */
 
 	node->nic->sendto(node, packet, nexthop);
@@ -44,9 +46,10 @@ int hive_recv(struct node *node, unsigned char *buf, size_t *len)
 	if (packet->len > *len)
 		return -EMSGSIZE;
 
-	plat_memcpy(buf, packet->data, packet->len);
+	size_t packet_len = packet->len;
+	plat_memcpy(buf, packet->data, packet_len);
 	packet_free(packet);
-	return packet->len;
+	return packet_len;
 }
 
 int hive_recvfrom(struct node *node, unsigned char *buf, size_t *len, struct address *from)
@@ -59,9 +62,12 @@ int hive_recvfrom(struct node *node, unsigned char *buf, size_t *len, struct add
 	if (packet->len > *len)
 		return -EMSGSIZE;
 
+	*from = *packet->src;
+
 	/* TODO: Validate address */
 
-	plat_memcpy(buf, packet->data, packet->len);
+	size_t packet_len = packet->len;
+	plat_memcpy(buf, packet->data, packet_len);
 	packet_free(packet);
-	return packet->len;
+	return packet_len;
 }

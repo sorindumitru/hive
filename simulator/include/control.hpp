@@ -29,6 +29,10 @@ private:
 	void cmd_start(Json::Value &);
 	void cmd_stop(Json::Value &);
 
+	void start_node(unsigned index);
+	void stop_node(unsigned index);
+	void unload_node(unsigned index);
+
 	typedef void *(*node_init_t)(void);
 	typedef void (*node_exit_t)(void *);
 	typedef void (*node_start_t)(void *);

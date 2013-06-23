@@ -23,6 +23,23 @@ struct nic simplenic = {
 	.recv = simplenic_recv,
 };
 
+struct packet *packet_clone(struct packet *packet, size_t header_len)
+{
+	struct packet *clone = (struct packet *)plat_alloc(sizeof(*clone));
+
+	*clone = *packet;
+
+	clone->header = (char *)plat_alloc(header_len);
+	plat_memcpy(clone->header, packet->header, header_len);
+
+	clone->data = (char *)plat_alloc(packet->len);
+	plat_memcpy(clone->data, packet->data, packet->len);
+
+	INIT_LIST_HEAD(&clone->list);
+
+	return clone;
+}
+
 struct nic *simplenic_clone(struct nic *nic, struct address *address)
 {
 	struct nic *clone = malloc(sizeof(*clone));
@@ -54,8 +71,10 @@ int simplenic_sendto(struct node *node, struct packet *packet, struct address *a
 
 	list_for_each_entry(dest, &nodes, list) {
 		if (address_match(&dest->nic->address, address) && dest != node)
-			dest->nic->recv(dest, packet);
+			dest->nic->recv(dest, packet_clone(packet, sizeof(*hdr)));
 	}
+
+	packet_free(packet);
 }
 
 void simplenic_recv(struct node *node, struct packet *packet)

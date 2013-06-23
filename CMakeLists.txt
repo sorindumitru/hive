@@ -12,6 +12,7 @@ configure_file (
 include_directories("${PROJECT_BINARY_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
+add_subdirectory(application)
 add_subdirectory(platform)
 add_subdirectory(simulator)
 add_subdirectory(node)
