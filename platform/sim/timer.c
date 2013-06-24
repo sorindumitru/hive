@@ -49,7 +49,9 @@ void timer_del(struct timer *timer)
 void timer_free(struct timer *timer)
 {
 	struct event *ev = timer->plat_priv;
-	evtimer_del(ev);
-	event_free(ev);
+	if (ev != NULL) {
+		evtimer_del(ev);
+		event_free(ev);
+	}
 	free(timer);
 }

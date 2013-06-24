@@ -29,9 +29,24 @@ private:
 	void cmd_start(Json::Value &);
 	void cmd_stop(Json::Value &);
 
-	void start_node(unsigned index);
-	void stop_node(unsigned index);
-	void unload_node(unsigned index);
+	void create_nodes(
+		unsigned count,
+		void *dlhandle,
+		std::string &node_name,
+		std::string &nic_type,
+		std::string &nic_addr,
+		std::string &router_type);
+
+	struct node *create_node(
+		void *dlhandle,
+		const char *node_name,
+		std::string &nic_type,
+		struct address &address,
+		std::string &router_type);
+
+	void start_node(unsigned index, bool quiet = false);
+	void stop_node(unsigned index, bool quiet = false);
+	void unload_node(unsigned index, bool quiet = false);
 
 	typedef void *(*node_init_t)(void);
 	typedef void (*node_exit_t)(void *);

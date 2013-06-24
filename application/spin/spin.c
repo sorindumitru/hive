@@ -29,18 +29,33 @@ struct metadata_t {
 	struct list_head list;
 };
 
+struct counters_t {
+	unsigned adv_recv;
+	unsigned adv_sent;
+	unsigned req_recv;
+	unsigned req_sent;
+	unsigned data_recv;
+	unsigned data_sent;
+};
+
 struct node_data_t {
 	struct list_head send_metadata_list;
 	struct list_head recv_metadata_list;
 
 	struct timer *recv_timer;
+	struct counters_t counters;
 };
 
 static unsigned short s_seq_no = 1;
 
+struct node_data_t *get_node_data(struct node *node)
+{
+	return (struct node_data_t *)node->priv;
+}
+
 void send_adv(struct node *node, struct metadata_t *metadata)
 {
-	printf("%s: %s\n", __FUNCTION__, node->name);
+//	printf("%s: %s\n", __FUNCTION__, node->name);
 
 	metadata->header.type = kMsgADV;
 	metadata->header.sending_node = node->index;
@@ -48,21 +63,25 @@ void send_adv(struct node *node, struct metadata_t *metadata)
 	struct address addr;
 	plat_memset(&addr, 0xFF, sizeof(addr));
 	hive_sendto(node, (unsigned char *)&metadata->header, sizeof(metadata->header), &addr);
+
+	get_node_data(node)->counters.adv_sent++;
 }
 
 void send_req(struct node *node, struct metadata_t *metadata, struct address *address)
 {
-	printf("%s: %s\n", __FUNCTION__, node->name);
+//	printf("%s: %s\n", __FUNCTION__, node->name);
 
 	metadata->header.type = kMsgREQ;
 	metadata->header.sending_node = node->index;
 
 	hive_sendto(node, (unsigned char *)&metadata->header, sizeof(metadata->header), address);
+
+	get_node_data(node)->counters.req_sent++;
 }
 
 void send_data(struct node *node, struct metadata_t *metadata, struct address *address)
 {
-	printf("%s: %s\n", __FUNCTION__, node->name);
+//	printf("%s: %s\n", __FUNCTION__, node->name);
 
 	metadata->header.type = kMsgDATA;
 
@@ -76,6 +95,8 @@ void send_data(struct node *node, struct metadata_t *metadata, struct address *a
 
 	hive_sendto(node, buf, buf_size, address);
 
+	get_node_data(node)->counters.data_sent++;
+
 	plat_free(buf);
 }
 
@@ -84,13 +105,14 @@ void spin_send(struct node *node, unsigned char *data, size_t data_len)
 	struct metadata_t *metadata = (struct metadata_t *)plat_alloc(sizeof(*metadata));
 	plat_memset(metadata, 0, sizeof(*metadata));
 
-	printf("%s: %s\n", __FUNCTION__, node->name);
+//	printf("%s: %s\n", __FUNCTION__, node->name);
 
 	metadata->header.origin_node = node->index;
 	metadata->header.seq_no = s_seq_no++;
 
-	metadata->data = data;
+	metadata->data = plat_alloc(data_len);
 	metadata->data_len = data_len;
+	plat_memcpy(metadata->data, data, data_len);
 
 	INIT_LIST_HEAD(&metadata->list);
 
@@ -100,11 +122,6 @@ void spin_send(struct node *node, unsigned char *data, size_t data_len)
 	printf("node '%s' sending data: %s\n", node->name, (char *)metadata->data);
 
 	send_adv(node, metadata);
-}
-
-struct node_data_t *get_node_data(struct node *node)
-{
-	return (struct node_data_t *)node->priv;
 }
 
 int needs_data(struct node *node, struct metadata_header_t *metadata_header)
@@ -131,7 +148,8 @@ void recv_adv(struct node *node, unsigned char *data, size_t data_len, struct ad
 {
 	struct metadata_header_t *hdr = (struct metadata_header_t *)data;
 
-	printf("%s: %s\n", __FUNCTION__, node->name);
+//	printf("%s: %s\n", __FUNCTION__, node->name);
+	get_node_data(node)->counters.adv_recv++;
 
 	if (hdr->origin_node == node->index || hdr->sending_node == node->index)
 		return;
@@ -153,11 +171,13 @@ void recv_adv(struct node *node, unsigned char *data, size_t data_len, struct ad
 
 void recv_req(struct node *node, unsigned char *data, size_t data_len, struct address *address)
 {
+	struct metadata_t *metadata;
 	struct metadata_header_t *hdr = (struct metadata_header_t *)data;
 
-	struct metadata_t *metadata = get_metadata(&get_node_data(node)->recv_metadata_list, hdr->origin_node, hdr->seq_no);
+//	printf("%s: %s\n", __FUNCTION__, node->name);
+	get_node_data(node)->counters.req_recv++;
 
-	printf("%s: %s\n", __FUNCTION__, node->name);
+	metadata = get_metadata(&get_node_data(node)->recv_metadata_list, hdr->origin_node, hdr->seq_no);
 
 	if (!metadata)
 		metadata = get_metadata(&get_node_data(node)->send_metadata_list, hdr->origin_node, hdr->seq_no);
@@ -177,11 +197,13 @@ void recv_req(struct node *node, unsigned char *data, size_t data_len, struct ad
 
 void recv_data(struct node *node, unsigned char *data, size_t data_len)
 {
+	struct metadata_t *metadata;
 	struct metadata_header_t *hdr = (struct metadata_header_t *)data;
 
-	struct metadata_t *metadata = get_metadata(&get_node_data(node)->recv_metadata_list, hdr->origin_node, hdr->seq_no);
+//	printf("%s: %s\n", __FUNCTION__, node->name);
+	get_node_data(node)->counters.data_recv++;
 
-	printf("%s: %s\n", __FUNCTION__, node->name);
+	metadata = get_metadata(&get_node_data(node)->recv_metadata_list, hdr->origin_node, hdr->seq_no);
 
 	if (!metadata) {
 		printf("received data for an unknown request origin_node=%u, seq_no=%u\n", hdr->origin_node, hdr->seq_no);
@@ -199,7 +221,7 @@ void recv_data(struct node *node, unsigned char *data, size_t data_len)
 
 void spin_recv(struct node *node, unsigned char *data, size_t data_len, struct address *address)
 {
-	printf("%s: %s\n", __FUNCTION__, node->name);
+//	printf("%s: %s\n", __FUNCTION__, node->name);
 
 	if (data_len < sizeof(struct metadata_header_t)) {
 		printf("short packet received, got %zu, expected at least %lu\n", data_len, sizeof(struct metadata_header_t));
@@ -243,9 +265,20 @@ void spin_start(void *arg)
 
 	printf("Starting %s\n", node->name);
 
-	if (strcmp(node->name, "sender") == 0) {
-		unsigned char *data = "Hello!";
-		spin_send(node, data, strlen(data));
+	if (strncmp(node->name, "sender", 6) == 0) {
+		char data[128];
+		snprintf(data, sizeof(data) - 1, "Hello from %s!", node->name);
+		spin_send(node, data, strlen(data) + 1);
+	}
+}
+
+void clear_metadata_list(struct list_head *list)
+{
+	while (!list_empty(list)) {
+		struct metadata_t *metadata = list_entry(list->next, struct metadata_t, list);
+		plat_free(metadata->data);
+		list_del(&metadata->list);
+		plat_free(metadata);
 	}
 }
 
@@ -257,11 +290,24 @@ void spin_stop(void *arg)
 	printf("Stopping %s\n", node->name);
 
 	timer_del(node_data->recv_timer);
+
+	printf("\tADV  recv: %u\n", node_data->counters.adv_recv);
+	printf("\tADV  sent: %u\n", node_data->counters.adv_sent);
+	printf("\tREQ  recv: %u\n", node_data->counters.req_recv);
+	printf("\tREQ  sent: %u\n", node_data->counters.req_sent);
+	printf("\tDATA recv: %u\n", node_data->counters.data_recv);
+	printf("\tDATA sent: %u\n", node_data->counters.data_sent);
+
+	clear_metadata_list(&node_data->send_metadata_list);
+	clear_metadata_list(&node_data->recv_metadata_list);
+
+	plat_memset(&node_data->counters, 0, sizeof(node_data->counters));
 }
 
 void *spin_init(void)
 {
 	struct node_data_t *node_data = (struct node_data_t *)plat_alloc(sizeof(*node_data));
+	plat_memset(node_data, 0, sizeof(*node_data));
 
 	INIT_LIST_HEAD(&node_data->send_metadata_list);
 	INIT_LIST_HEAD(&node_data->recv_metadata_list);

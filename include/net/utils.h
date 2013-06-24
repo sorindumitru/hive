@@ -46,7 +46,7 @@ static inline struct address address_from_string(const char *source)
 
 static inline void address_print(struct address *address)
 {
-	printf("%hx:%hx:%hx:%hx:%hx:%hx",
+	printf("%02hX:%02hX:%02hX:%02hX:%02hX:%02hX",
 				address->mac[0],
 				address->mac[1],
 				address->mac[2],

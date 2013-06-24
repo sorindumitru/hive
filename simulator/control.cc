@@ -102,6 +102,10 @@ void control::cmd_load(Json::Value &root)
 	std::string library = root["library"].asString();
 	std::string name = root["name"].asString();
 
+	unsigned count = root["count"].asInt();
+	if (count == 0)
+		count++;
+
 	struct node *node = node_find_by_name(name.c_str());
 	if (node)
 		return;
@@ -110,31 +114,117 @@ void control::cmd_load(Json::Value &root)
 	if (handle == NULL)
 		return;
 
-	const struct node_library_t &node_lib = m_libmanager.get_node_library(handle);
+	std::string nic_type;
+	std::string nic_addr;
+
+	Json::Value &nic = root["nic"];
+	if (!nic.isNull()) {
+		nic_type = nic["type"].asString();
+		nic_addr = nic["address"].asString();
+	}
+
+	std::string router_type;
+
+	Json::Value &router = root["routing"];
+	if (!router.isNull()) {
+		router_type = router["type"].asString();
+	}
+
+	create_nodes(count, handle, name, nic_type, nic_addr, router_type);
+}
+
+void control::create_nodes(
+	unsigned count,
+	void *dlhandle,
+	std::string &node_name,
+	std::string &nic_type,
+	std::string &nic_addr,
+	std::string &router_type)
+{
+	struct address address = address_from_string(nic_addr.c_str());
+
+	if (count == 1) {
+		struct node *node = create_node(
+			dlhandle,
+			node_name.c_str(),
+			nic_type,
+			address,
+			router_type);
+
+		if (node) {
+			std::cout
+				<< "created node "
+				<< node->index << ": "
+				<< node->name << " " << nic_addr
+				<< std::endl;
+		}
+
+		return;
+	}
+
+	char name[128];
+	unsigned first_index = 0;
+	unsigned i = 1;
+
+	for (; i <= count; i++) {
+		snprintf(name, sizeof(name) - 1, "%s_%u", node_name.c_str(), i);
+
+		struct address node_addr = address;
+		unsigned mac32 = ntohl(*(unsigned *)&node_addr.mac[2]);
+		*(unsigned *)&node_addr.mac[2] = htonl(mac32 + i - 1);
+
+		struct node *node = create_node(
+			dlhandle,
+			name,
+			nic_type,
+			node_addr,
+			router_type);
+
+		if (!node) {
+			std::cerr << "node creation aborted" << std::endl;
+			break;
+		}
+
+		if (first_index == 0)
+			first_index = node->index;
+	}
+
+	if (i > 1) {
+		std::cout
+			<< "created " << (i - 1) << " nodes "
+			<< first_index << "-" << (first_index + i - 2)
+			<< " first address " << nic_addr
+			<< std::endl;
+	}
+}
+
+struct node *control::create_node(
+	void *dlhandle,
+	const char *node_name,
+	std::string &nic_type,
+	struct address &address,
+	std::string &router_type)
+{
+	const struct node_library_t &node_lib = m_libmanager.get_node_library(dlhandle);
 
 	void *data = node_lib.init();
-	node = (struct node *) malloc(sizeof(*node));
 
-	Json::Value nic = root["nic"];
+	struct node *node = (struct node *) malloc(sizeof(*node));
+	memset(node, 0, sizeof(*node));
 
-	if (nic.isNull())
-		return;
-
-	std::string json_addr = nic["address"].asString();
-
-	node->nic = nic_clone(nic["type"].asString().c_str(),
-			address_from_string(nic["address"].asString().c_str()));
-
-	Json::Value router = root["routing"];
-
-	node->router = router_get_by_name(router["type"].asString().c_str());
-
-	node->index = add_node_data(handle, node);
-	node->name = strdup(name.c_str());
+	node->name = strdup(node_name);
 	node->priv = data;
+
+	if (!nic_type.empty())
+		node->nic = nic_clone(nic_type.c_str(), address);
+
+	if (!router_type.empty())
+		node->router = router_get_by_name(router_type.c_str());
+
+	node->index = add_node_data(dlhandle, node);
 	node_add(node);
 
-	std::cout << "created node " << node->index << std::endl;
+	return node;
 }
 
 void control::cmd_unload(Json::Value &root)
@@ -147,16 +237,26 @@ void control::cmd_unload(Json::Value &root)
 	if (index.isArray()) {
 		for (unsigned i = 0; i < index.size(); i++)
 			unload_node(index[i].asInt());
-	} else {
-		unload_node(index.asInt());
+	} else if (!index.isNull()) {
+		int node_index = index.asInt();
+
+		unsigned count = root["count"].asInt();
+		if (count == 0)
+			count++;
+
+		for (unsigned i = 0; i < count; i++)
+			unload_node(node_index + i, true);
+
+		std::cout << "nodes removed" << std::endl;
 	}
 }
 
-void control::unload_node(unsigned index)
+void control::unload_node(unsigned index, bool quiet)
 {
 	const struct node_data *node_data = get_node_data(index);
 	if (node_data == NULL) {
-		std::cerr << "cannot find node " << index << std::endl;
+		if (!quiet)
+			std::cerr << "cannot find node " << index << std::endl;
 		return;
 	}
 
@@ -165,7 +265,8 @@ void control::unload_node(unsigned index)
 	node_lib.exit(node_data->node);
 	del_node(index);
 
-	std::cout << "removed node " << index << std::endl;
+	if (!quiet)
+		std::cout << "removed node " << index << std::endl;
 }
 
 void control::cmd_start(Json::Value &root)
@@ -178,16 +279,26 @@ void control::cmd_start(Json::Value &root)
 	if (index.isArray()) {
 		for (unsigned i = 0; i < index.size(); i++)
 			start_node(index[i].asInt());
-	} else {
-		start_node(index.asInt());
+	} else if (!index.isNull()) {
+		int node_index = index.asInt();
+
+		unsigned count = root["count"].asInt();
+		if (count == 0)
+			count++;
+
+		for (unsigned i = 0; i < count; i++)
+			start_node(node_index + i, true);
+
+		std::cout << "nodes started" << std::endl;
 	}
 }
 
-void control::start_node(unsigned index)
+void control::start_node(unsigned index, bool quiet)
 {
 	const struct node_data *node_data = get_node_data(index);
 	if (node_data == NULL) {
-		std::cerr << "cannot find node " << index << std::endl;
+		if (!quiet)
+			std::cerr << "cannot find node " << index << std::endl;
 		return;
 	}
 
@@ -195,7 +306,8 @@ void control::start_node(unsigned index)
 
 	node_lib.start(node_data->node);
 
-	std::cout << "started node " << index << std::endl;
+	if (!quiet)
+		std::cout << "started node " << index << std::endl;
 }
 
 void control::cmd_stop(Json::Value &root)
@@ -208,16 +320,26 @@ void control::cmd_stop(Json::Value &root)
 	if (index.isArray()) {
 		for (unsigned i = 0; i < index.size(); i++)
 			stop_node(index[i].asInt());
-	} else {
-		stop_node(index.asInt());
+	} else if (!index.isNull()) {
+		int node_index = index.asInt();
+
+		unsigned count = root["count"].asInt();
+		if (count == 0)
+			count++;
+
+		for (unsigned i = 0; i < count; i++)
+			stop_node(node_index + i, true);
+
+		std::cout << "nodes stopped" << std::endl;
 	}
 }
 
-void control::stop_node(unsigned index)
+void control::stop_node(unsigned index, bool quiet)
 {
 	const struct node_data *node_data = get_node_data(index);
 	if (node_data == NULL) {
-		std::cerr << "cannot find node " << index << std::endl;
+		if (!quiet)
+			std::cerr << "cannot find node " << index << std::endl;
 		return;
 	}
 
@@ -225,7 +347,8 @@ void control::stop_node(unsigned index)
 
 	node_lib.stop(node_data->node);
 
-	std::cout << "stopped node " << index << std::endl;
+	if (!quiet)
+		std::cout << "stopped node " << index << std::endl;
 }
 
 unsigned control::add_node_data(void *dlhandle, struct node* node)
