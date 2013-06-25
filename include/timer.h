@@ -9,10 +9,14 @@ typedef void (*callback_t)(void *arg);
 
 struct timer {
 	unsigned char	recursive:1;
+	unsigned char	debug:1;
 	unsigned long	expires;
 	callback_t	cb;
 	void		*arg;
 	void		*plat_priv;
+
+	struct timespec set;
+	unsigned int count;
 };
 
 extern struct timer *timer_new(callback_t cb, unsigned long expires);
