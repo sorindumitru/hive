@@ -32,6 +32,17 @@ static inline char hex_to_int(char hex)
 	return 0;
 }
 
+static inline void address_print(struct address *address)
+{
+	printf("%02hX:%02hX:%02hX:%02hX:%02hX:%02hX",
+				address->mac[0],
+				address->mac[1],
+				address->mac[2],
+				address->mac[3],
+				address->mac[4],
+				address->mac[5]);
+}
+
 static inline struct address address_from_string(const char *source)
 {
 	struct address addr;
@@ -42,17 +53,6 @@ static inline struct address address_from_string(const char *source)
 	}
 
 	return addr;
-}
-
-static inline void address_print(struct address *address)
-{
-	printf("%02hX:%02hX:%02hX:%02hX:%02hX:%02hX",
-				address->mac[0],
-				address->mac[1],
-				address->mac[2],
-				address->mac[3],
-				address->mac[4],
-				address->mac[5]);
 }
 
 static inline int addr_is_broadcast(struct address *addr)

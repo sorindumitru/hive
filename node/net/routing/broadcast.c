@@ -1,6 +1,6 @@
 #include <net/routing.h>
 
-static struct address * broadcast_next_hop(struct address *from, struct address *to);
+static struct address * broadcast_next_hop(struct node *node, struct address *from, struct address *to);
 static int broadcast_recv(struct node *node, struct packet *packet);
 
 struct router broadcast_router = {
@@ -9,7 +9,7 @@ struct router broadcast_router = {
 	.recv = broadcast_recv,
 };
 
-static struct address * broadcast_next_hop(struct address *from, struct address *to)
+static struct address * broadcast_next_hop(struct node *node, struct address *from, struct address *to)
 {
 	struct address *broadcast = plat_alloc(sizeof(*broadcast));
 	if (!broadcast)

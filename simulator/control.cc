@@ -226,7 +226,7 @@ struct node *control::create_node(
 		node->nic = nic_clone(nic_type.c_str(), address);
 
 	if (!router_type.empty())
-		node->router = router_get_by_name(router_type.c_str());
+		node->router = router_clone(node, (router_type.c_str()));
 
 	node->index = add_node_data(dlhandle, node);
 	node->x = random_pos();
@@ -314,6 +314,9 @@ void control::start_node(unsigned index, bool quiet)
 	const struct node_library_t &node_lib = m_libmanager.get_node_library(node_data->dlhandle);
 
 	node_lib.start(node_data->node);
+	/* If router has start method also start it */
+	if (node_data->node->router->start)
+		node_data->node->router->start(node_data->node);
 
 	if (!quiet)
 		std::cout << "started node " << index << std::endl;

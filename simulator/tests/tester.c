@@ -25,5 +25,13 @@ int main(int argc, const char *argv[])
 		write(sock, data, strlen(data));
 	}
 
+	for (i = 0; i < nr; i++) {
+		char data[2048] = {0};
+		char *template = "{ \"start\" : { \"index\" : %d, \"count\" : 1} }";
+
+		sprintf(data, template, i+1);
+		write(sock, data, strlen(data));
+	}
+
 	return 0;
 }
