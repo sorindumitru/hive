@@ -14,6 +14,8 @@ struct router;
 
 struct node {
 	char *name;
+	unsigned int x;
+	unsigned int y;
 	int index;
 	struct nic *nic;
 	struct router *router;

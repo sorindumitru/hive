@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <dlfcn.h>
 #include <sys/socket.h>
 #include <iostream>
@@ -133,6 +134,12 @@ void control::cmd_load(Json::Value &root)
 	create_nodes(count, handle, name, nic_type, nic_addr, router_type);
 }
 
+/* return a random int in [0,100) */
+static inline unsigned int random_pos(void)
+{
+	return rand() % 100;
+}
+
 void control::create_nodes(
 	unsigned count,
 	void *dlhandle,
@@ -222,6 +229,8 @@ struct node *control::create_node(
 		node->router = router_get_by_name(router_type.c_str());
 
 	node->index = add_node_data(dlhandle, node);
+	node->x = random_pos();
+	node->y = random_pos();
 	node_add(node);
 
 	return node;

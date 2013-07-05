@@ -1,4 +1,4 @@
-
+#include <cstdlib>
 #include <iostream>
 #include <pthread.h>
 #include <cstdlib>
@@ -12,6 +12,8 @@ int main(int argc, const char *argv[])
 {
 	std::cout << "Starting hive simulator" << std::endl;
 	std::vector<pthread_t> workers;
+
+	srand(time(NULL));
 
 	platform_init();
 
