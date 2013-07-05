@@ -80,7 +80,7 @@ int simplenic_sendto(struct node *node, struct packet *packet, struct address *a
 void simplenic_recv(struct node *node, struct packet *packet)
 {
 	/* Check if it is for the router of the node */
-	if (node->router->recv(packet))
+	if (node->router->recv && node->router->recv(node, packet))
 		return;
 	
 	/* Sending to the application */

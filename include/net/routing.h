@@ -13,7 +13,7 @@ struct router {
 	struct list_head	list;
 	struct router		*(*clone)(struct node *node, struct router *router);
 	struct address		*(*next_hop)(struct address *from, struct address *to);
-	int			(*recv)(struct packet *packet);
+	int			(*recv)(struct node *node, struct packet *packet);
 };
 
 extern struct list_head router_list;

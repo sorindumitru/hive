@@ -1,7 +1,7 @@
 #include <net/routing.h>
 
 static struct address * broadcast_next_hop(struct address *from, struct address *to);
-static int broadcast_recv(struct packet *packet);
+static int broadcast_recv(struct node *node, struct packet *packet);
 
 struct router broadcast_router = {
 	.name = "broadcast",
@@ -20,7 +20,7 @@ static struct address * broadcast_next_hop(struct address *from, struct address 
 	return broadcast;
 }
 
-static int broadcast_recv(struct packet *packet)
+static int broadcast_recv(struct node *node, struct packet *packet)
 {
 	/* We don't do anything here */
 	return 0;
